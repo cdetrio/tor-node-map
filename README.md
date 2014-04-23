@@ -42,3 +42,8 @@ Other tor relay maps:
 [Tor V3 consensus servers worldwide](http://freehaven.net/~ioerror/) (long load time)
 
 [endast/Tormap](https://github.com/endast/Tormap/) - [http://bitly.com/tor_map](http://bitly.com/tor_map)
+
+
+Other p2p network node maps:
+------
+[bitcoin nodes WebGL globe](http://blockchain.info/nodes-globe)
