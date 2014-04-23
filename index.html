@@ -124,7 +124,7 @@ div.tooltip {
 
 </head>
 <body>
-<div class="mapHeader"><h1>D3 world map of Tor relay nodes - top 2000 by observed bandwidth</h1></div>
+<div class="mapHeader"><h1>D3 world map of Tor relay nodes - top 2000 by consensus bandwidth</h1></div>
 <div id="relayMapLegend" class="relayMapLegend">
   <svg width="400" height="40">
     <circle cx="20" cy="20" r="5" fill="red" stroke-width="1" stroke="white"/>
@@ -391,21 +391,21 @@ function ready(world, names, relay_data) {
   NetworkDetailsStr = 'number of relays: ' + relays_arr_unsorted.length;
 
   var relay_data_sorted = _.sortBy(relays_arr_unsorted, function (relay) {
-    return -1 * relay.observed_bandwidth;
+    return -1 * relay.consensus_weight;
   });
 
   var relays_array = _.first(relay_data_sorted, RELAYS_TO_PLOT);
 
 
 
-  var all_relay_bandwidths = _.pluck(relay_data_sorted, 'observed_bandwidth');
+  var all_relay_bandwidths = _.pluck(relay_data_sorted, 'consensus_weight');
 
   var bandwidth_total = _.reduce(all_relay_bandwidths, function(sum, num) {
     return sum + num;
   });
 
 
-  var relay_bandwidths = _.pluck(relays_array, 'observed_bandwidth');
+  var relay_bandwidths = _.pluck(relays_array, 'consensus_weight');
   var min_bw = _.min(relay_bandwidths);
   var max_bw = _.max(relay_bandwidths);
 
@@ -440,7 +440,7 @@ function ready(world, names, relay_data) {
   }
 
   function percentileRank(sel_idx) {
-  // sel_idx is sorted by observed bandwidth.
+  // sel_idx is sorted by consensus_weight.
     var num_total_idx = _.size(relay_data_sorted);
     var count_of_scores_less = num_total_idx - sel_idx;
     var percentile_rank = ((count_of_scores_less / num_total_idx)*100).toFixed(1);
@@ -456,7 +456,7 @@ function ready(world, names, relay_data) {
       bubble.latitude = relay.latitude;
       bubble.longitude = relay.longitude;
       //bubble.radius = 10;
-      bubble.radius = bubbleRadiusScale(bwToRadius(relay.observed_bandwidth));
+      bubble.radius = bubbleRadiusScale(bwToRadius(relay.consensus_weight));
       //bubble.fillKey = 'blue';
       bubble.fillKey = colorForRelayType(relay);
       return bubble;
@@ -537,7 +537,7 @@ function ready(world, names, relay_data) {
       RelayDetailsDiv.innerHTML += '<br>\n' + 'country: ' + selected_relay.country_name;
     }
     RelayDetailsDiv.innerHTML += '<br>\n' + 'AS NAME: ' + selected_relay.as_name;
-    RelayDetailsDiv.innerHTML += '<br>\n' + 'observed bandwidth: ' + simplifiedUnits(selected_relay.observed_bandwidth, 2) + '/s';
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'consensus bandwidth: ' + simplifiedUnits(selected_relay.consensus_weight, 2) + '/s';
     RelayDetailsDiv.innerHTML += '<br>\n' + 'bandwidth percentile rank: ' + percentileRank(selected_relay_idx) + '%';
     
   }
@@ -598,16 +598,17 @@ function cloneEvent (ev) {
 
 
 // as per https://en.wikipedia.org/wiki/Data_rate_units#Prefix:_k_vs_Ki
-var units = ["B", "KiB", "MiB", "GiB", "TiB"];
+//var units = ["B", "KiB", "MiB", "GiB", "TiB"]; // observed_bandwidth is in bytes per second
+var units = ["kB", "MB", "GB", "TB"]; // consensus_weight is in kilobytes per second
 // from https://gist.github.com/mekwall/4458195
 function simplifiedUnits(input, precision) {
-    var unit = units[0];
-    var i = 0;
-    while (input > 1024 && ++i) {
-        unit = units[i];
-        input /= 1024;
-    }
-    return input.toFixed(precision) + " " + unit;
+  var unit = units[0];
+  var i = 0;
+  while (input > 1000 && ++i) {
+      unit = units[i];
+      input /= 1000;
+  }
+  return input.toFixed(precision) + " " + unit;
 }
 
 
