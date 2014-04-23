@@ -1,5 +1,8 @@
 tor-node-map
 ======
+
+Fetches tor relay information from [https://onionoo.torproject.org/](https://onionoo.torproject.org/). Plots relay nodes as bubbles (circles) with area proportional to their observed bandwidth. The bubbles are plotted on a [kinetic.js](http://kineticjs.com/) canvas, overlayed on top of a [d3.js](http://d3js.org/) map. I did it this way (kinetic/d3 mashup) for better performance. On my machine, panning/zooming more than a few hundred d3 svg elements is too slow. But it can comfortably handle a few thousand canvas sprites. Kinetic provides event handlers on canvas sprites, d3 does not.
+
 To view a local copy: `python -m SimpleHTTPServer`
 
 
