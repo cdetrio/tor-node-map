@@ -305,7 +305,7 @@ var getTsv = Promise.promisify(d3.tsv);
 var allRequests = Promise.all([
   getJson("world-50m.json"),
   getTsv("world-country-names.tsv"),
-  getJson("https://onionoo.torproject.org/details?type=relay")
+  //getJson("https://onionoo.torproject.org/details?type=relay")
   getJson("onionoo-relay-details.json") // local copy of json returned by https://onionoo.torproject.org/details?type=relay
 ]);
 
