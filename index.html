@@ -1,43 +1,616 @@
-<html>
-<head>
-<title>TorMap - Jordan Wright (jmwright798 at gmail.com)</title>
-<script src="js/jquery.min.js"></script>
 
-<script src="js/jquery-jvectormap-1.2.2.min.js"></script>
-<script src="js/jquery-jvectormap-world-mill-en.js"></script>
-<link rel="stylesheet" media="all" href="css/jquery-jvectormap-1.2.2.css"/>
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>D3 world map of Tor relay nodes</title>
+<style>
+body { 
+  color: #666; 
+  background: #f3f3f3; 
+  font: normal 10px "Helvetica Neue", Helvetica, sans-serif; 
+  margin: 2em; 
+}
+#map {
+  position: absolute;
+  top: 70px;
+  left: 20px;
+  border:2px solid #000;
+  width:960px;
+  height:550px;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);;
+}
+#canvasContainer {
+  position: absolute;
+  top: 70px;
+  left: 20px;
+  border:1px solid red;
+  width:960px;
+  height:550px;
+  pointer-events: none;
+}
+#canvasZoomer {
+  position: absolute;
+  border:1px dotted orange;
+}
+
+.svgBorderRect {
+  fill: none;
+  stroke: green;
+  stroke-width: 3px;
+}
+
+.country {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: .1px;
+  stroke-linejoin: round;
+}
+
+.hidden { 
+  display: none; 
+}
+div.tooltip {
+  color: #222; 
+  background: #fff; 
+  padding: .5em; 
+  text-shadow: #f5f5f5 0 1px 0;
+  border-radius: 2px; 
+  box-shadow: 0px 0px 2px 0px #a6a6a6; 
+  opacity: 0.9; 
+  position: absolute;
+}
+.point {
+  fill: #000;
+  stroke: #fff;
+  stroke-width: .5px;
+  opacity: 0.5; 
+}
+
+.mapHeader {
+  position: absolute;
+  display: inline-table;
+  height: 40px;
+  overflow: hidden;
+}
+
+.relayMapLegend {
+  border: 1px solid black;
+  display: inline-block;
+  float: right;
+  width: 400px;
+  height: 40px;
+  font-size: 14px;
+  vertical-align: top;
+  color: black;
+  background-color: lightGray;
+}
+
+.networkSummary {
+  border: 1px solid black;
+  position: absolute;
+  right: 20px;
+  top: 70px;
+  width: 250px;
+  height: 100px;
+  font-size: 14px;
+  color: black;
+}
+
+.relayDetails {
+  border: 1px solid black;
+  position: absolute;
+  right: 20px;
+  top: 200px;
+  width: 250px;
+  height: 300px;
+  font-size: 14px;
+  color: black;
+}
+
+.smallFont {
+  font-size: 8pt;
+}
+
+
+</style>
+<!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.1.0/topojson.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/kineticjs/5.0.1/kinetic.min.js"></script> kinetic v5 breaks something -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/kineticjs/4.7.2/kinetic.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/1.2.2/bluebird.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<!-- <script src="pointerevents.min.js"></script> -->
+
+
 </head>
 <body>
-<div style="height:100%;width:100%" id="tor_map"></div>
+<div class="mapHeader"><h1>D3 world map of Tor relay nodes - top 2000 by observed bandwidth</h1></div>
+<div id="relayMapLegend" class="relayMapLegend">
+  <svg width="400" height="40">
+    <circle cx="20" cy="20" r="5" fill="red" stroke-width="1" stroke="white"/>
+    <text x="30" y="25" fill="black">Exit node</text>
+    <circle cx="120" cy="20" r="5" fill="green" stroke-width="1" stroke="white"/>
+    <text x="130" y="25" fill="black">Guard node</text>
+    <circle cx="240" cy="20" r="5" fill="blue" stroke-width="1" stroke="white"/>
+    <text x="250" y="25" fill="black">Relay node</text>
+  </svg>
+</div>
+
+<br><br><br><br>
+
+<div id="map" touch-action="none"></div>
+<div id="canvasContainer">
+  <div id="canvasZoomer"></div>
+</div>
+
+<div id="networkSummary" class="networkSummary">
+</div>
+<div id="relayDetails" class="relayDetails">
+</div>
+
 
 <script>
-$(function(){
-  $('#tor_map').vectorMap({
-    map: 'world_mill_en',
-    scaleColors: ['#C8EEFF', '#0071A4'],
-    normalizeFunction: 'polynomial',
-    hoverOpacity: 0.7,
-    hoverColor: false,
-    markerStyle: {
-      initial: {
-        fill: '#cc6600',
-        stroke: '#222222',
-        r: 2
-      }
-    },
-    backgroundColor: '#222222',
-    markers: [
-    ]
-  });
-  
-  map = $('#tor_map').vectorMap('get', 'mapObject');
-  $.getJSON('https://onionoo.torproject.org/details', function(data){
-		$.each(data.relays, function(idx, relay)
-		{
-			map.addMarker(relay.or_addresses[0], {'latLng' : [relay.latitude, relay.longitude], "name" : relay.or_addresses[0]});
-		});
-	});
+
+
+var MapContainerDiv = document.getElementById('map');
+var CanvasZoomEl = document.getElementById('canvasZoomer');
+var CanvasEventReceiver;
+
+function clone_ev (ev) {
+  //console.log('got map_ev:', ev);
+  // we want both kinetic.js canvas event handlers and d3.js svg event handlers.
+  // so need events to be received by both the canvas element and the svg elements.
+  // events will only bubble from a child to a parent, not to siblings.
+  // but appending canvas as the child of a parent svg, or vice-versa, is not straightforward
+  // to workaround this, we catch specific events in one parent element, and dispatch a clone event to the other element
+
+  // dispatch a clone event to the canvas, triggers the kinetic.js handlers
+  CanvasEventReceiver.dispatchEvent(cloneEvent(ev));
+}
+
+// catch events at the parent d3 map container
+MapContainerDiv.addEventListener('mousedown', clone_ev, false); // ios webkit translates touchstart events
+MapContainerDiv.addEventListener('mousemove', clone_ev, false); // for mouseover events
+
+
+// kinetic.js doesn't listen to pointer events, can't use these unfortunately
+//MapContainerDiv.addEventListener('pointerdown', map_ev, false);
+//MapContainerDiv.addEventListener('pointermove', map_ev, false);
+//MapContainerDiv.addEventListener('pointerup', map_ev, false);
+//MapContainerDiv.addEventListener('pointerover', map_ev, false);
+//MapContainerDiv.addEventListener('pointerout', map_ev, false);
+
+
+
+var RelayDetailsDiv = document.getElementById('relayDetails');
+var NetworkDetailsDiv = document.getElementById('networkSummary');
+
+RelayDetailsDiv.innerHTML = 'click or mouseover a node';
+
+NetworkDetailsDiv.innerHTML = 'fetching onionoo data...';
+
+
+
+var MAP_SCALE = 200;
+
+
+// The SVG container
+var width  = 960,
+    height = 550;
+
+//var color = d3.scale.category10();
+
+
+
+
+function d3_rgbString (value) {
+  return d3.rgb(value >> 16, value >> 8 & 0xff, value & 0xff);
+}
+
+// 4 colors different from the relay node legend (red, green, blue)
+var d3_category4 = [
+  0x8c564b, 0xe377c2, 0x7f7f7f, 0x17becf
+].map(d3_rgbString);
+
+var color = d3.scale.ordinal().range(d3_category4);
+
+
+
+
+
+var MapProjection = d3.geo.mercator() // yeah i know the mercator projection sucks, will experiment with others
+                .translate([480, 300])
+                .scale(150);
+
+var path = d3.geo.path()
+    .projection(MapProjection);
+
+
+
+
+var xLatitudeScale = d3.scale.linear()
+    .domain([0, width])
+    .range([0, width]);
+
+var yLongitudeScale = d3.scale.linear()
+    .domain([0, height])
+    .range([0, height]);
+
+
+function bwToRadius (bandwidth_value) {
+  // area = pi * r^2
+  // area ~ bandwidth
+  // bandwidth = pi * r^2
+  // bandwidth / pi = r^2
+  // r = sqrt(bandwidth/pi) 
+  return Math.sqrt(bandwidth_value / Math.PI);
+}
+
+var bubbleRadiusScale = d3.scale.linear();
+
+
+
+
+
+
+
+var svg = d3.select("#map").append("svg")
+    .classed("svgEl", true)
+    .attr("width", width)
+    .attr("height", height)
+    .call(d3.behavior.zoom().x(xLatitudeScale).y(yLongitudeScale).scaleExtent([1, 10]).on("zoom", redraw))
+    .append("g")
+      .classed("svgGroupEl", true);
+
+
+
+
+var svgGroupEl = d3.select(".svgGroupEl");
+
+
+
+
+
+
+var KineticCircles = [];
+var KineticLayer = null;
+var InitialCirclePositions = [];
+
+
+
+
+function redraw() {
+  //console.log('redraw()');
+  var trans_x = d3.event.translate[0] + "px";
+  var trans_y = d3.event.translate[1] + "px";
+
+  var svg_transform_str = "translate3d("+trans_x+","+trans_y+",0)" + " scale("+d3.event.scale+")";
+  svgGroupEl.node().style.webkitTransform = svg_transform_str;
+
+  repositionBubbles(KineticCircles);
+}
+
+
+var tooltip = d3.select("#map").append("div")
+    .attr("class", "tooltip");
+
+
+
+var getJson = Promise.promisify(d3.json);
+var getTsv = Promise.promisify(d3.tsv);
+
+
+// map files sourced from http://techslides.com/d3-world-maps-tooltips-zooming-and-queue/
+
+var allRequests = Promise.all([
+  getJson("world-50m.json"),
+  getTsv("world-country-names.tsv"),
+  getJson("onionoo-details.json") // local copy of json returned by https://onionoo.torproject.org/details
+]);
+
+allRequests.then(function (data) {
+  //console.log('allRequests.then data:', data);
+  ready(data[0], data[1], data[2]);
 });
+//.catch(function (err) {
+//  // fails if there's an error in the ready() function s
+//});
+
+
+
+var CircleSelectedIdx = null;
+
+
+
+function ready(world, names, relay_data) {
+  var countries = topojson.feature(world, world.objects.countries).features;
+  var neighbors = topojson.neighbors(world.objects.countries.geometries);
+  var i = -1;
+  var n = countries.length;
+
+  countries.forEach(function(d) { 
+    var tryit = names.filter(function(n) { return d.id == n.id; })[0];
+    if (typeof tryit === "undefined"){
+      d.name = "Undefined";
+    } else {
+      d.name = tryit.name; 
+    }
+  });
+
+  var country = svg.selectAll(".country").data(countries);
+
+  country
+   .enter()
+    .insert("path")
+    .attr("class", "country")    
+      .attr("title", function(d,i) { return d.name; })
+      .attr("d", path)
+      .style("fill", function(d, i) { return color(d.color = d3.max(neighbors[i], function(n) { return countries[n].color; }) + 1 | 0); });
+
+
+  //Show/hide tooltip
+  country
+    .on("pointerover", function(d,i) {
+      var mouse = d3.mouse(svg.node()).map( function(d) { return parseInt(d); } );
+
+      tooltip
+        .classed("hidden", false)
+        //.attr("style", "left:"+(mouse[0]+25)+"px; top:"+mouse[1]+"px")
+        .attr("style", "left:"+(xLatitudeScale(mouse[0])+25)+"px; top:"+yLongitudeScale(mouse[1])+"px")
+        .html(d.name)
+    })
+    .on("pointerout",  function(d,i) {
+      tooltip.classed("hidden", true)
+    });
+
+
+
+
+  var stage = new Kinetic.Stage({
+    container: 'canvasZoomer',
+    width: width,
+    height: height
+    //draggable: true
+  });
+  KineticLayer = new Kinetic.Layer({
+    //draggable: true
+  });
+
+  //layer.batchDraw();
+
+
+
+
+  var RELAYS_TO_PLOT = 2000;
+
+
+  var relays_arr_unsorted = relay_data.relays;
+
+
+  NetworkDetailsStr = 'number of relays: ' + relays_arr_unsorted.length;
+
+  var relay_data_sorted = _.sortBy(relays_arr_unsorted, function (relay) {
+    return -1 * relay.observed_bandwidth;
+  });
+
+  var relays_array = _.first(relay_data_sorted, RELAYS_TO_PLOT);
+
+
+
+  var all_relay_bandwidths = _.pluck(relay_data_sorted, 'observed_bandwidth');
+
+  var bandwidth_total = _.reduce(all_relay_bandwidths, function(sum, num) {
+    return sum + num;
+  });
+
+
+  var relay_bandwidths = _.pluck(relays_array, 'observed_bandwidth');
+  var min_bw = _.min(relay_bandwidths);
+  var max_bw = _.max(relay_bandwidths);
+
+  // area of bubble is proportional to relay bandwidth. should also try area proportional to log(bandwidth)
+  bubbleRadiusScale
+    .domain([bwToRadius(min_bw), bwToRadius(max_bw)])
+    .range([3, 15]); // min and max radius px of bubbles
+
+  var plotted_bandwidth_total = _.reduce(relay_bandwidths, function(sum, num) {
+    return sum + num;
+  });
+
+
+
+  NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + 'bandwidth total: ' + simplifiedUnits(bandwidth_total, 3) + '/s';
+  NetworkDetailsStr = NetworkDetailsStr + '<br>\n';
+  NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + '# relays plotted: ' + RELAYS_TO_PLOT;
+  NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + 'plotted bandwidth total: ' + simplifiedUnits(plotted_bandwidth_total, 3) + '/s';
+
+  NetworkDetailsDiv.innerHTML = NetworkDetailsStr;
+
+
+
+  function colorForRelayType(relay_data) {
+    if (_.contains(relay_data.flags, "Guard")) {
+      return 'green';
+    }
+    if (_.has(relay_data.exit_policy_summary, 'accept')) {
+      return 'red';
+    }
+    return 'blue';
+  }
+
+  function percentileRank(sel_idx) {
+  // sel_idx is sorted by observed bandwidth.
+    var num_total_idx = _.size(relay_data_sorted);
+    var count_of_scores_less = num_total_idx - sel_idx;
+    var percentile_rank = ((count_of_scores_less / num_total_idx)*100).toFixed(1);
+    return percentile_rank;
+  }
+
+
+
+  var relay_bubbles_data =
+    _.map(relays_array, function (relay) {
+      var bubble = {};
+      bubble.name = relay.or_addresses[0];
+      bubble.latitude = relay.latitude;
+      bubble.longitude = relay.longitude;
+      //bubble.radius = 10;
+      bubble.radius = bubbleRadiusScale(bwToRadius(relay.observed_bandwidth));
+      //bubble.fillKey = 'blue';
+      bubble.fillKey = colorForRelayType(relay);
+      return bubble;
+    });
+
+
+
+
+
+  relay_bubbles_data.forEach(function(relay, i) {
+    var projection_x = 0;
+    var projection_y = 0;
+    if (_.isNumber(relay.latitude) && _.isNumber(relay.longitude)) {
+      var projected_coords = MapProjection([relay.longitude, relay.latitude]);
+      projection_x = projected_coords[0];
+      projection_y = projected_coords[1];
+    }
+    
+    var circle = new Kinetic.Circle({
+      x: xLatitudeScale(projection_x),
+      y: yLongitudeScale(projection_y),
+      radius: relay.radius,
+      fill: relay.fillKey,
+      stroke: 'white',
+      strokeWidth: 0.5,
+      name: relay.name,
+      idx: i
+    });
+
+    InitialCirclePositions.push({'x': xLatitudeScale(projection_x), 'y': yLongitudeScale(projection_y)});
+
+    KineticCircles.push(circle);
+
+    KineticLayer.add(circle);
+  });
+
+
+
+
+  KineticLayer.on('mousedown mouseover touchstart', function(evt) {
+    //console.log('kinetic mousedown evt:', evt);
+    evtOnBubbleHandler(evt);
+  });
+
+
+
+  function evtOnBubbleHandler (evt) {
+    if (_.isNumber(CircleSelectedIdx)) {
+      //console.log('KineticCircles[CircleSelectedIdx]:', KineticCircles[CircleSelectedIdx]);
+      KineticCircles[CircleSelectedIdx].setAttr('strokeWidth', 0.5);
+      KineticCircles[CircleSelectedIdx].setAttr('stroke', 'white');
+    }
+    
+    var shape = evt.targetNode;
+    shape.setAttr('strokeWidth', 3);
+    shape.setAttr('stroke', 'orange');
+    KineticLayer.draw(); // redraw the stroke outlines
+
+    var selected_relay_idx = shape.getAttrs().idx;
+    CircleSelectedIdx = selected_relay_idx;
+    var selected_relay = relays_array[selected_relay_idx];
+    console.log('selected_relay:', selected_relay);
+    //RelayDetailsDiv.innerHTML = 'idx: ' + selected_relay_idx;
+    RelayDetailsDiv.innerHTML = '';
+    RelayDetailsDiv.innerHTML += 'ip address: ' + selected_relay.or_addresses[0];
+    if (_.has(selected_relay, 'host_name')) {
+      RelayDetailsDiv.innerHTML += '<br>\n' + 'hostname: ' + selected_relay.host_name;
+    }
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'nickname: ' + selected_relay.nickname;
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'fingerprint: <span class="smallFont">' + selected_relay.fingerprint + '</span>';
+    if (_.has(selected_relay, 'city_name')) {
+      RelayDetailsDiv.innerHTML += '<br>\n' + 'city: ' + selected_relay.city_name;
+    }
+    if (_.has(selected_relay, 'region_name')) {
+      RelayDetailsDiv.innerHTML += '<br>\n' + 'region: ' + selected_relay.region_name;
+    }
+    if (_.has(selected_relay, 'country_name')) {
+      RelayDetailsDiv.innerHTML += '<br>\n' + 'country: ' + selected_relay.country_name;
+    }
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'AS NAME: ' + selected_relay.as_name;
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'observed bandwidth: ' + simplifiedUnits(selected_relay.observed_bandwidth, 2) + '/s';
+    RelayDetailsDiv.innerHTML += '<br>\n' + 'bandwidth percentile rank: ' + percentileRank(selected_relay_idx) + '%';
+    
+  }
+
+
+
+  stage.add(KineticLayer);
+
+  CanvasEventReceiver = CanvasZoomEl.getElementsByClassName('kineticjs-content')[0];
+
+  //console.log('CanvasEventReceiver after reset to kineticjs-content:', CanvasEventReceiver);
+
+  // border to mark initial zoom window
+  //svg.append("rect").classed("svgBorderRect", true).attr("x", 0).attr("y", 0).attr("width", width).attr("height", height);
+
+}
+
+
+
+
+function repositionBubbles(kinetic_circles) {
+// semantic zooming - http://bl.ocks.org/mbostock/3681006
+// bubbles stay the same size regardless of the map zoom level
+// for geometric zooming, adjust the browser zoom level
+
+  kinetic_circles.forEach(function (circle, i) {
+    var new_x = xLatitudeScale(InitialCirclePositions[i].x);
+    var new_y = yLongitudeScale(InitialCirclePositions[i].y);
+
+    circle.setPosition([new_x, new_y]);
+    //console.log('moved circle to new_position:', new_position);
+  });
+
+  KineticLayer.draw();
+}
+
+
+
+
+function cloneEvent (ev) {
+  var ev_clone = new Event(ev.type, {'bubbles':true, 'cancelable':false});
+  ev_clone.touches = ev.touches;
+  ev_clone.targetTouches = ev.targetTouches;
+  ev_clone.changedTouches = ev.changedTouches;
+  ev_clone.clientX = ev.clientX;
+  ev_clone.clientY = ev.clientY;
+  ev_clone.pageX = ev.pageX;
+  ev_clone.pageY = ev.pageY;
+  ev_clone.screenX = ev.screenX;
+  ev_clone.screenY = ev.screenY;
+  ev_clone.offsetX = ev.offsetX;
+  ev_clone.offsetY = ev.offsetY;
+  ev_clone.which = ev.which;
+
+  return ev_clone;
+}
+
+
+
+// as per https://en.wikipedia.org/wiki/Data_rate_units#Prefix:_k_vs_Ki
+var units = ["B", "KiB", "MiB", "GiB", "TiB"];
+// from https://gist.github.com/mekwall/4458195
+function simplifiedUnits(input, precision) {
+    var unit = units[0];
+    var i = 0;
+    while (input > 1024 && ++i) {
+        unit = units[i];
+        input /= 1024;
+    }
+    return input.toFixed(precision) + " " + unit;
+}
+
+
 </script>
 </body>
 </html>
