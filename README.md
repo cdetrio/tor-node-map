@@ -12,12 +12,20 @@ There's also a group of bubbles in the top-left (0,0), these are relays with ip 
 
 To fetch latest relay details from onionoo: `wget https://onionoo.torproject.org/details?type=relay -O onionoo-relay-details.json`
 
-To view a local copy: `python -m SimpleHTTPServer`
+To run a local webserver: `python -m SimpleHTTPServer`
 
 
 inspired by 
 [jordan-wright/tormap](https://github.com/jordan-wright/tormap)
 [http://raidersec.blogspot.com/2013/09/mapping-tor-relays-and-exit-nodes.html](http://raidersec.blogspot.com/2013/09/mapping-tor-relays-and-exit-nodes.html)
+
+
+Incentive for Tor Relays - proof-of-relay / proof-of-bandwidth
+------
+Currently, Tor relay bandwidths are [estimated by active measurements](https://blog.torproject.org/blog/lifecycle-of-a-new-relay), performed by a set of "bandwidth authorities" (bwauths). The bandwidth authorities vote to form a "consensus bandwidth" (listed as "consensus_weight" in onionoo) value for a relay.
+
+[LIRA](http://freehaven.net/anonbib/cache/ndss13-lira.pdf) is an incentive scheme for Tor relays - think of it as "TorCoin". LIRA proposes using an opportunistic [decentralized bandwidth measurement](https://trac.torproject.org/projects/tor/ticket/5464), namely [EigenSpeed](https://www.usenix.org/legacy/event/iptps09/tech/full_papers/snader/snader.pdf), instead of active measurements by bandwidth authorities. In a decentralized EigenSpeed measurement, each node would communicate to others its estimate of other nodes' bandwidths. The result would be each node maintaining its own large sparse [EigenTrust](https://en.wikipedia.org/wiki/EigenTrust)-like matrix.
+
 
 Other tor relay maps:
 ------
