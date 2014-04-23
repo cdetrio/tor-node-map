@@ -17,3 +17,5 @@ Other tor relay maps:
 [Tor exit nodes located and mapped](http://hackertarget.com/tor-exit-node-visualization/)
 
 [Tor V3 consensus servers worldwide](http://freehaven.net/~ioerror/) (long load time)
+
+[endast/Tormap](https://github.com/endast/Tormap/) - [http://bitly.com/tor_map](http://bitly.com/tor_map)
