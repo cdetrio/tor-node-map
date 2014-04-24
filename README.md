@@ -33,6 +33,8 @@ Other tor relay maps:
 
 [Vidalia Network Map using Marble 3D Globe](https://blog.torproject.org/blog/technology-preview-marble-and-vidalia020)
 
+[Tore Metrics - Network Bubbles](https://metrics.torproject.org/bubbles.html)
+
 [void.gr world map](https://tormap.void.gr/) - [World City Map of Tor Nodes](http://www.void.gr/kargig/blog/2012/11/27/world-city-map-of-tor-nodes/)
 
 [Visualization: Tor nodes on Google Maps and Google Earth](http://moblog.wiredwings.com/archives/20101213/visualization-tor-nodes-on-google-maps-and-google-earth.html)
