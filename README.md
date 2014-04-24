@@ -4,7 +4,7 @@ tor-node-map
 See it here: [http://cdetrio.github.io/tor-node-map/](http://cdetrio.github.io/tor-node-map/)
 
 
-Uses tor relay information from [https://onionoo.torproject.org/](https://onionoo.torproject.org/). Plots relay nodes as bubbles (circles) with area proportional to their observed bandwidth. The bubbles are plotted on a [kinetic.js](http://kineticjs.com/) canvas, overlayed on top of a [d3.js](http://d3js.org/) map. I did it this way (kinetic/d3 mashup) for better performance. On my machine, panning/zooming more than a few hundred d3 svg elements is too slow. But it can comfortably handle a few thousand canvas sprites. Kinetic provides event handlers on canvas sprites, d3 does not.
+Uses tor relay information from [https://onionoo.torproject.org/](https://onionoo.torproject.org/). Plots relay nodes as bubbles (circles) with area proportional to their observed bandwidth. The bubbles are plotted on a [kinetic.js](http://kineticjs.com/) canvas, overlayed on top of a [d3.js](http://d3js.org/) map. I did it this way (kinetic/d3 mashup) for better performance. On my machine, panning/zooming more than a few hundred d3 svg elements is too slow. But it can comfortably handle a few thousand canvas sprites. Kineticjs provides event handlers on canvas sprites, d3 does not. Firefox needs an offsetX/Y event property kludge, so relay selection works a little bit better in Chrome.
 
 One issue to be fixed is when multiple relays have the same geoip latitude/longitude coordinates. Where this happens, you will see lots of white as several bubbles of different sizes are placed at the exact same spot (each bubble has a thin white outline stroke). I'm not yet sure how to deal with this.
 
