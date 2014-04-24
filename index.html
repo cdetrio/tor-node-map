@@ -13,7 +13,7 @@ body {
   position: absolute;
   top: 70px;
   left: 20px;
-  border:2px solid #000;
+  border:1px solid #000;
   width:960px;
   height:550px;
   -webkit-tap-highlight-color: rgba(0,0,0,0);;
@@ -22,14 +22,14 @@ body {
   position: absolute;
   top: 70px;
   left: 20px;
-  border:1px solid red;
+  border:0px solid red;
   width:960px;
   height:550px;
   pointer-events: none;
 }
 #canvasZoomer {
   position: absolute;
-  border:1px dotted orange;
+  border:0px dotted orange;
 }
 
 .svgBorderRect {
@@ -112,11 +112,9 @@ div.tooltip {
 
 
 </style>
-<!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.1.0/topojson.min.js"></script>
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/kineticjs/5.0.1/kinetic.min.js"></script> kinetic v5 breaks something -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/kineticjs/4.7.2/kinetic.min.js"></script>
+<script src="http://d3lp1msu2r81bx.cloudfront.net/kjs/js/lib/kinetic-v5.0.2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/1.2.2/bluebird.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 <!-- <script src="pointerevents.min.js"></script> -->
@@ -181,26 +179,16 @@ MapContainerDiv.addEventListener('mousemove', clone_ev, false); // for mouseover
 //MapContainerDiv.addEventListener('pointerout', map_ev, false);
 
 
-
 var RelayDetailsDiv = document.getElementById('relayDetails');
 var NetworkDetailsDiv = document.getElementById('networkSummary');
 
 RelayDetailsDiv.innerHTML = 'click or mouseover a node';
-
 NetworkDetailsDiv.innerHTML = 'fetching onionoo data...';
-
-
-
-var MAP_SCALE = 200;
 
 
 // The SVG container
 var width  = 960,
     height = 550;
-
-//var color = d3.scale.category10();
-
-
 
 
 function d3_rgbString (value) {
@@ -216,16 +204,12 @@ var color = d3.scale.ordinal().range(d3_category4);
 
 
 
-
-
 var MapProjection = d3.geo.mercator() // yeah i know the mercator projection sucks, will experiment with others
                 .translate([480, 300])
                 .scale(150);
 
 var path = d3.geo.path()
     .projection(MapProjection);
-
-
 
 
 var xLatitudeScale = d3.scale.linear()
@@ -250,10 +234,6 @@ var bubbleRadiusScale = d3.scale.linear();
 
 
 
-
-
-
-
 var svg = d3.select("#map").append("svg")
     .classed("svgEl", true)
     .attr("width", width)
@@ -262,13 +242,7 @@ var svg = d3.select("#map").append("svg")
     .append("g")
       .classed("svgGroupEl", true);
 
-
-
-
 var svgGroupEl = d3.select(".svgGroupEl");
-
-
-
 
 
 
@@ -278,14 +252,14 @@ var InitialCirclePositions = [];
 
 
 
-
 function redraw() {
   //console.log('redraw()');
   var trans_x = d3.event.translate[0] + "px";
   var trans_y = d3.event.translate[1] + "px";
 
   var svg_transform_str = "translate3d("+trans_x+","+trans_y+",0)" + " scale("+d3.event.scale+")";
-  svgGroupEl.node().style.webkitTransform = svg_transform_str;
+  svgGroupEl.node().style.webkitTransform = svg_transform_str; // chrome
+  svgGroupEl.node().style.transform = svg_transform_str; // firefox
 
   repositionBubbles(KineticCircles);
 }
@@ -318,9 +292,7 @@ allRequests.then(function (data) {
 //});
 
 
-
 var CircleSelectedIdx = null;
-
 
 
 function ready(world, names, relay_data) {
@@ -380,10 +352,7 @@ function ready(world, names, relay_data) {
   //layer.batchDraw();
 
 
-
-
   var RELAYS_TO_PLOT = 2000;
-
 
   var relays_arr_unsorted = relay_data.relays;
 
@@ -396,14 +365,10 @@ function ready(world, names, relay_data) {
 
   var relays_array = _.first(relay_data_sorted, RELAYS_TO_PLOT);
 
-
-
   var all_relay_bandwidths = _.pluck(relay_data_sorted, 'consensus_weight');
-
   var bandwidth_total = _.reduce(all_relay_bandwidths, function(sum, num) {
     return sum + num;
   });
-
 
   var relay_bandwidths = _.pluck(relays_array, 'consensus_weight');
   var min_bw = _.min(relay_bandwidths);
@@ -419,14 +384,12 @@ function ready(world, names, relay_data) {
   });
 
 
-
   NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + 'bandwidth total: ' + simplifiedUnits(bandwidth_total, 3) + '/s';
   NetworkDetailsStr = NetworkDetailsStr + '<br>\n';
   NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + '# relays plotted: ' + RELAYS_TO_PLOT;
   NetworkDetailsStr = NetworkDetailsStr + '<br>\n' + 'plotted bandwidth total: ' + simplifiedUnits(plotted_bandwidth_total, 3) + '/s';
 
   NetworkDetailsDiv.innerHTML = NetworkDetailsStr;
-
 
 
   function colorForRelayType(relay_data) {
@@ -448,7 +411,6 @@ function ready(world, names, relay_data) {
   }
 
 
-
   var relay_bubbles_data =
     _.map(relays_array, function (relay) {
       var bubble = {};
@@ -461,8 +423,6 @@ function ready(world, names, relay_data) {
       bubble.fillKey = colorForRelayType(relay);
       return bubble;
     });
-
-
 
 
 
@@ -495,25 +455,25 @@ function ready(world, names, relay_data) {
 
 
 
-
   KineticLayer.on('mousedown mouseover touchstart', function(evt) {
     //console.log('kinetic mousedown evt:', evt);
     evtOnBubbleHandler(evt);
   });
 
-
-
   function evtOnBubbleHandler (evt) {
     if (_.isNumber(CircleSelectedIdx)) {
       //console.log('KineticCircles[CircleSelectedIdx]:', KineticCircles[CircleSelectedIdx]);
-      KineticCircles[CircleSelectedIdx].setAttr('strokeWidth', 0.5);
-      KineticCircles[CircleSelectedIdx].setAttr('stroke', 'white');
+      KineticCircles[CircleSelectedIdx].strokeWidth(0.5);
+      KineticCircles[CircleSelectedIdx].stroke('white');
+      //KineticCircles[CircleSelectedIdx].draw();
     }
     
-    var shape = evt.targetNode;
-    shape.setAttr('strokeWidth', 3);
-    shape.setAttr('stroke', 'orange');
+    var shape = evt.target;
+    //console.log('evt:', evt);
+    shape.stroke('orange');
+    shape.strokeWidth(3);
     KineticLayer.draw(); // redraw the stroke outlines
+    //shape.draw();
 
     var selected_relay_idx = shape.getAttrs().idx;
     CircleSelectedIdx = selected_relay_idx;
@@ -543,7 +503,6 @@ function ready(world, names, relay_data) {
   }
 
 
-
   stage.add(KineticLayer);
 
   CanvasEventReceiver = CanvasZoomEl.getElementsByClassName('kineticjs-content')[0];
@@ -567,7 +526,7 @@ function repositionBubbles(kinetic_circles) {
     var new_x = xLatitudeScale(InitialCirclePositions[i].x);
     var new_y = yLongitudeScale(InitialCirclePositions[i].y);
 
-    circle.setPosition([new_x, new_y]);
+    circle.setPosition({x: new_x, y: new_y});
     //console.log('moved circle to new_position:', new_position);
   });
 
@@ -588,9 +547,35 @@ function cloneEvent (ev) {
   ev_clone.pageY = ev.pageY;
   ev_clone.screenX = ev.screenX;
   ev_clone.screenY = ev.screenY;
-  ev_clone.offsetX = ev.offsetX;
-  ev_clone.offsetY = ev.offsetY;
-  ev_clone.which = ev.which;
+  ev_clone.layerX = ev.layerX;
+  ev_clone.layerY = ev.layerY;
+
+  // firefox workarounds
+  // http://www.jacklmoore.com/notes/mouse-position/
+  // http://stackoverflow.com/questions/17293681/why-firefox-event-offsetx-and-offsety-are-undefined
+  /*
+  if(!ev.hasOwnProperty('offsetX')) {
+    ev_clone.offsetX = ev.layerX - ev.currentTarget.offsetLeft;
+    ev_clone.offsetY = ev.layerY - ev.currentTarget.offsetTop;
+  } else {
+    ev_clone.offsetX = ev.offsetX;
+    ev_clone.offsetY = ev.offsetY;
+  }
+  */
+  /*
+  var target = ev.target || ev.srcElement;
+  var rect = target.getBoundingClientRect();
+  ev_clone.offsetX = ev.clientX - rect.left;
+  ev_clone.offsetY = ev.clientY - rect.top;
+  */
+
+  //ev_clone.offsetX = ev.offsetX == undefined?ev.layerX:ev.offsetX;
+  //ev_clone.offsetY = ev.offsetY == undefined?ev.layerY:ev.offsetY;
+
+  // sub-optimal firefox kludge. event position is still offset by element border width
+  ev_clone.offsetX = ev.offsetX == undefined ? xLatitudeScale(ev.layerX) : ev.offsetX;
+  ev_clone.offsetY = ev.offsetY == undefined ? yLongitudeScale(ev.layerY) : ev.offsetY;
+  //console.log('ev_clone.offsetX: ' + ev_clone.offsetX + '   ev_clone.offsetY: ' + ev_clone.offsetY);
 
   return ev_clone;
 }
