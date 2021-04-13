@@ -29,6 +29,8 @@ Currently, Tor relay bandwidths are [estimated by active measurements](https://b
 
 Other tor relay maps:
 ------
+[Tor Exit Nodes Analyzed and Mapped](https://spyse.com/blog/cybersecurity-research/tor-exit-nodes-mapped)
+
 [Vidalia Network Map](https://tails.boum.org/doc/anonymous_internet/vidalia/index.en.html#index1h1)
 
 [Vidalia Network Map using Marble 3D Globe](https://blog.torproject.org/blog/technology-preview-marble-and-vidalia020)
